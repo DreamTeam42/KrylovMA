@@ -1,49 +1,24 @@
-from bs4 import BeautifulSoup
 import requests
-import time
 import json
-import re
+from bs4 import BeautifulSoup
 
-#URL = "https://vlgg.realty.mail.ru/sale/living/"
-URL = "https://vlgg.realty.mail.ru/offer/sale-liv-1946920318042940.html?osale1"
+def parse(url, type):
 
-
-def get_page_count(html):
-    rrr = requests.get(html)
-    soup = BeautifulSoup(rrr.text, 'html.parser')
-    paggination = soup.find('div', class_='paging js-paging')
-    return int(paggination.find_all('a')[-1].text)
-
-def main():
-    #page_count = (get_page_count(URL))
-    lis = parse(URL)
-    print (lis)
-#progects = []
-"""
-    for page in range(1, page_count):
-        print('Parse %d%%' %(page/page_count * 100))
-        progects.extend(parse(requests.get(URL2 = URL + '?page=%d' % page)))
-
-        #rrr = requests.get(URL2)
-        #soup = BeautifulSoup(rrr.text, 'html.parser')"""
-
-
-def parse(url):
     list = {}
-    #list['Тип объявления'] = type
+    list['Тип объявления'] = type
 
     html = requests.get(url)
     soup = BeautifulSoup(html.text, 'html.parser')
 
     zagolovok = soup.find('div', class_='cols__wrapper')
 
-    # room = zagolovok.find('h1', class_='hdr__inner').text
-    # list['Количество комнат'] = room
+    #room = zagolovok.find('h1', class_='hdr__inner').text
+    #list['Количество комнат'] = room
 
     adress = zagolovok.find('span', class_='hdr__inner').text
     list['Адресс'] = adress
 
-    prodav = soup.find('span', class_='p-contact__name').text
+    prodav = soup.find('span', class_='p-contact__name').text.replace('\"', '')
     list['Контактное лицо'] = prodav
 
     phone = soup.find('span', class_='valign_middle').text + "28"
@@ -52,7 +27,7 @@ def parse(url):
     data = soup.find('span', class_='note__text js-ago').text
     list['Дата публикации и обновления объявления'] = data
 
-    tablel = soup.find('div', class_='cols__column cols__column_small_12 cols__column_medium_12 cols__column_large_12')
+    tablel = soup.find('div',  class_='cols__column cols__column_small_12 cols__column_medium_12 cols__column_large_12')
     table = tablel.find('div', class_='cols__inner')
 
     price = table.find('span', class_='hdr__inner').text.replace('\xa0', ' ')
@@ -71,14 +46,14 @@ def parse(url):
         list['Район'] = "Не указано"
 
     try:
-        district = soup.findAll('span', {'class': 'p-params__text'})[0].text.replace('/', ' из ')
-        list['Этаж'] = district
+        etaz = soup.findAll('span', {'class': 'p-params__text'})[0].text.replace('/', ' из ')
+        list['Этаж'] = etaz
     except:
         list['Этаж'] = "Не указано"
 
     try:
-        district = soup.findAll('span', {'class': 'p-params__text'})[1].text
-        list['Количество комнат'] = district
+        colvo_room = soup.findAll('span', {'class': 'p-params__text'})[1].text
+        list['Количество комнат'] = colvo_room
     except:
         list['Количество комнат'] = "Не указано"
 
@@ -100,8 +75,7 @@ def parse(url):
     except:
         list['Площадь кухни'] = "Не указано"
 
-    promezutok = soup.find('div', {
-        'class': 'cols__column cols__column_small_19 cols__column_medium_30 cols__column_large_34 js-track_visibility'})
+    promezutok = soup.find('div', { 'class': 'cols__column cols__column_small_19 cols__column_medium_30 cols__column_large_34 js-track_visibility'})
     try:
         opisanie = promezutok.find('div', {'class': ''}).text
         list['Описание'] = opisanie
@@ -125,6 +99,29 @@ def parse(url):
 
     return list
 
+def getPageCount(html):
+    rrr = requests.get(html)
+    soup = BeautifulSoup(rrr.text, 'html.parser')
+    paggination = soup.find('div', class_='paging js-paging')
+    return int(paggination.find_all('a')[-1].text)
+
+def scanPage(url):
+    html1 = requests.get(url)
+    soup1 = BeautifulSoup(html1.text, 'html.parser')
+    offerURLs = soup1.findAll("a", {"class": "p-instance__title link-holder"})
+    i=0
+    #pageCount = (getPageCount(url))
+    while (i!= 15):
+        for item in offerURLs:
+            href = item.attrs["href"]
+            type = "Продажа"
+            print("Начинаю парсить " + str(href))
+            descArr.append(parse(href, type))
+            i+=1
 
 if __name__ == '__main__':
-    main()
+    descArr = []
+    exampleURL = "https://vlgg.realty.mail.ru/sale/living/"
+    scanPage(exampleURL)
+    with open('data.json', 'w', encoding='utf-8') as file:
+        json.dump(descArr, file, indent=2, ensure_ascii=False)
