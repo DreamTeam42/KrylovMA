@@ -12,6 +12,9 @@ def parse(url, type):
 
     zagolovok = soup.find('div', class_='cols__wrapper')
 
+    zagolovoch = zagolovok.find('h1', class_='hdr__inner').text
+    list['Заголовок'] = zagolovoch
+
     adress = zagolovok.find('span', class_='hdr__inner').text
     list['Адресс'] = adress
 
