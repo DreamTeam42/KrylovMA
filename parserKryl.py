@@ -12,9 +12,6 @@ def parse(url, type):
 
     zagolovok = soup.find('div', class_='cols__wrapper')
 
-    #room = zagolovok.find('h1', class_='hdr__inner').text
-    #list['Количество комнат'] = room
-
     adress = zagolovok.find('span', class_='hdr__inner').text
     list['Адресс'] = adress
 
@@ -110,18 +107,27 @@ def scanPage(url):
     soup1 = BeautifulSoup(html1.text, 'html.parser')
     offerURLs = soup1.findAll("a", {"class": "p-instance__title link-holder"})
     i=0
-    #pageCount = (getPageCount(url))
     while (i!= 15):
         for item in offerURLs:
             href = item.attrs["href"]
             type = "Продажа"
-            print("Начинаю парсить " + str(href))
+            #print("Начинаю парсить " + str(href))
             descArr.append(parse(href, type))
             i+=1
+
+def scanSection(url):
+    #html2 = requests.get(url)
+    #soup2 = BeautifulSoup(html2.text, 'html.parser')
+    pageCount = (getPageCount(url))
+    print('Всего страниц найдено %d' % pageCount)
+    for page in range(1, pageCount):
+        print('Парсинг %d%%' % (page / pageCount * 100))
+        https = (url + '?page=%d' % page)
+        descArr.append(scanPage(https))
 
 if __name__ == '__main__':
     descArr = []
     exampleURL = "https://vlgg.realty.mail.ru/sale/living/"
-    scanPage(exampleURL)
+    scanSection(exampleURL)
     with open('data.json', 'w', encoding='utf-8') as file:
         json.dump(descArr, file, indent=2, ensure_ascii=False)
